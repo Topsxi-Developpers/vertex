@@ -1,0 +1,806 @@
+AGENTS.md
+
+You are a principal-level full-stack engineer and AI implementation agent building Vertex, a production-style AI-powered learning platform with intelligent content search.
+
+1. Project Overview
+
+Build a free, open-access learning platform centered around courses, educational videos, and content discovery.
+
+The platform must allow users to:
+
+Discover courses through search.
+Search for specific information within video content.
+Jump directly to relevant video timestamps.
+Watch educational videos through an integrated player.
+Track their learning progress.
+Resume previously watched content.
+
+Administrators must have access to platform-wide analytics, including video engagement and course attendance.
+
+The platform must remain completely free. No payments, subscriptions, premium tiers, or monetization mechanisms should be introduced.
+
+All AI agents working on this project must follow the specifications in this document.
+
+2. Core Principles
+
+All implementation decisions must follow these principles:
+
+Server-side first: Prefer server-side rendering and server-side data operations.
+End-to-end type safety: Maintain strong typing across the entire application, from database models to frontend components.
+Database-driven architecture: Persist application data in a properly designed relational database.
+Simplicity first: Avoid unnecessary abstractions, dependencies, and architectural complexity.
+Security by default: Authentication, authorization, input validation, and data protection are mandatory.
+Accessibility: The platform must be usable by people with different accessibility needs.
+Maintainability: Write readable, modular, documented, and testable code.
+No unnecessary dependencies: Prefer existing project capabilities over introducing new libraries.
+No speculative implementation: Do not implement features that are not required or explicitly approved.
+User review: Never consider a significant change complete without presenting it for review.
+3. Product Requirements
+3.1 Course Discovery
+
+Users must be able to discover educational courses through a search interface.
+
+Required capabilities:
+
+Search courses by title.
+Search courses by description.
+Search relevant course metadata.
+Search individual videos by title.
+Display relevant search results.
+Provide useful empty states when no results are found.
+Support pagination or an equivalent scalable result-loading mechanism.
+
+Search must be case-insensitive and handle partial matches where appropriate.
+
+Search results must respect content visibility and access permissions.
+
+3.2 Search Within Videos
+
+Users must be able to search for information contained inside video content.
+
+This is a core feature of the platform.
+
+Required capabilities:
+
+Index video transcripts.
+Search for words and phrases within transcripts.
+Associate every transcript segment with its corresponding video timestamp.
+Return relevant matching excerpts.
+Display the video title and relevant transcript excerpt.
+Display the timestamp of each matching excerpt.
+Allow users to click a result and jump directly to the corresponding timestamp.
+Support multiple matches within the same video.
+Rank results by relevance.
+
+A search result must identify the actual position within the video, not simply the beginning of the video.
+
+Transcript requirements
+
+Transcript data must be stored persistently in the database.
+
+A transcript segment should contain:
+
+Video identifier.
+Text content.
+Start timestamp.
+End timestamp.
+Optional speaker identifier.
+Optional additional metadata.
+
+Transcripts must support future improvements, including different languages and improved search relevance.
+
+Do not assume that all videos already have transcripts.
+
+The system must handle missing transcripts gracefully.
+
+Transcript generation or ingestion should be designed as a separate process that can be extended independently of the video player.
+
+3.3 Integrated Video Player
+
+Provide an integrated video player.
+
+Required capabilities:
+
+Play and pause videos.
+Seek to a specific timestamp.
+Display playback progress.
+Display video duration when available.
+Support standard playback controls.
+Resume playback from a previously saved position.
+Display relevant transcript content alongside the video when available.
+Allow users to navigate from transcript search results directly to the matching timestamp.
+
+The player must support the chosen video source and format through a well-defined abstraction.
+
+Avoid coupling application business logic directly to a specific video provider.
+
+3.4 Free Access
+
+The platform must remain entirely free.
+
+Explicit restrictions:
+
+No payment processing.
+No subscription management.
+No premium memberships.
+No paid course access.
+No paywalls.
+No monetization features.
+
+All published courses must be accessible without payment.
+
+Authentication may be required for progress tracking and personalized features, but public course visibility must not be unnecessarily restricted.
+
+3.5 Authentication
+
+Support two authentication methods:
+
+OAuth authentication.
+Classic email-based authentication.
+
+OAuth must support configurable identity providers.
+
+The architecture should allow additional providers to be introduced without major application changes.
+
+Email authentication should support:
+
+Account registration.
+Email verification.
+Login.
+Logout.
+Password recovery.
+Secure password storage.
+Secure session management.
+
+Authentication requirements:
+
+Never store passwords in plaintext.
+Use established authentication libraries or providers.
+Protect authentication endpoints against abuse.
+Validate all authentication inputs.
+Implement secure session expiration.
+Prevent unauthorized access to protected resources.
+Support account linking carefully to avoid account takeover vulnerabilities.
+
+Do not implement custom cryptographic authentication mechanisms.
+
+3.6 Learning Progress Tracking
+
+Authenticated users must be able to track their learning activity.
+
+Track at least:
+
+Courses started.
+Courses attempted.
+Courses completed.
+Videos watched.
+Last watched position for each video.
+Last access timestamp.
+Video completion status.
+Overall course progress.
+
+Users must be able to resume a video from their last saved position.
+
+Progress must be persisted in the database and associated with the authenticated user.
+
+Progress updates should not generate excessive database writes.
+
+Use an appropriate strategy for periodically saving playback progress and saving it when playback is paused or ended.
+
+Progress information must remain private to the corresponding user.
+
+Users must not be able to read or modify another user's learning progress.
+
+3.7 Administrative Analytics
+
+Provide an administrative analytics area.
+
+This area must be accessible exclusively to authorized administrators.
+
+Required analytics:
+
+Number of attendees per course.
+Number of users who started each course.
+Number of users who completed each course.
+Number of video views.
+Video engagement.
+Video playback distribution.
+Most frequently watched video segments.
+Most frequently abandoned video segments.
+Course popularity.
+Learning activity over time.
+Video engagement analytics
+
+The platform must be able to identify which portions of videos are watched most frequently.
+
+Collect appropriate playback events or aggregated viewing intervals.
+
+Analytics should distinguish between:
+
+Video started.
+Video progress.
+Video paused.
+Video completed.
+Video resumed.
+Video seeking activity.
+
+Avoid treating every seek action as genuine video consumption.
+
+Engagement metrics should be based on actual observed playback rather than merely the last playback position.
+
+Administrative access
+Implement role-based access control.
+Only administrators can access administrative analytics.
+Authorization must be enforced server-side.
+Hiding administrative UI elements is not sufficient authorization.
+Regular users must never be able to access analytics endpoints or administrative data.
+Privacy
+
+Collect only the information necessary for product functionality and analytics.
+
+Prefer aggregated statistics when individual-level data is unnecessary.
+
+Establish appropriate data retention and deletion policies.
+
+4. Technical Architecture
+4.1 Architectural Approach
+
+Use a server-side-first architecture with end-to-end type safety.
+
+Prioritize:
+
+Server-side rendering.
+Server-side data fetching.
+Server-side mutations.
+Strongly typed API boundaries.
+Explicit database models.
+Clear separation of responsibilities.
+Minimal client-side JavaScript.
+
+Client-side code should primarily handle interactive experiences, including:
+
+Video playback.
+Search interactions.
+Transcript navigation.
+Interactive progress indicators.
+Administrative charts.
+
+Do not move business logic to the client when it can be handled securely on the server.
+
+4.2 Technology Selection
+
+Before introducing or changing technologies:
+
+Inspect the existing repository.
+Identify the current framework and dependencies.
+Review existing architectural decisions.
+Reuse existing infrastructure whenever possible.
+Identify missing capabilities.
+Propose changes before introducing major new dependencies.
+
+Technology choices must support:
+
+Server-side rendering.
+TypeScript or an equivalent strongly typed language.
+Relational database persistence.
+OAuth and email authentication.
+Video playback.
+Full-text search.
+Transcript indexing and timestamp retrieval.
+Automated testing.
+
+Do not introduce a new framework, database, ORM, authentication system, or major infrastructure dependency without explaining the reason and obtaining approval.
+
+4.3 Database Architecture
+
+The application must rely on a persistent relational database.
+
+The database is the source of truth for application data.
+
+Use explicit database models and well-defined relationships.
+
+At minimum, the data model should account for the following entities:
+
+User
+
+id
+email
+name
+role
+email verification status
+created_at
+updated_at
+
+Account
+
+id
+user_id
+provider
+provider_account_id
+provider-specific authentication metadata
+
+Session
+
+id
+user_id
+expires_at
+session metadata
+
+Course
+
+id
+title
+description
+slug
+publication status
+created_at
+updated_at
+
+CourseEnrollment
+
+id
+user_id
+course_id
+started_at
+last_accessed_at
+completed_at
+status
+
+Video
+
+id
+course_id
+title
+description
+video_source
+duration
+position
+publication status
+created_at
+updated_at
+
+TranscriptSegment
+
+id
+video_id
+text
+start_time
+end_time
+speaker
+language
+
+VideoProgress
+
+id
+user_id
+video_id
+last_position
+watched_duration
+completion status
+last_watched_at
+
+VideoPlaybackEvent
+
+id
+user_id
+video_id
+event_type
+playback_position
+event_timestamp
+optional session identifier
+
+The schema is a starting point, not a requirement to reproduce these exact tables.
+
+Agents must review relationships, normalization, constraints, indexes, and data integrity before implementing migrations.
+
+Important database requirements:
+
+Use foreign keys where appropriate.
+Add indexes for frequently queried fields.
+Prevent duplicate enrollments.
+Prevent duplicate progress records for the same user and video.
+Use transactions for operations requiring atomicity.
+Use database migrations for schema changes.
+Never modify production schemas manually.
+Avoid storing redundant information without justification.
+4.4 Search Architecture
+
+Search must cover two distinct domains:
+
+Course and video metadata.
+Video transcript content.
+
+Keep search logic independent from UI components.
+
+Use database-backed full-text search where it satisfies the requirements.
+
+Evaluate more specialized search infrastructure only if necessary.
+
+Search architecture should allow future extensions such as:
+
+Typo tolerance.
+Language-specific tokenization.
+Better relevance ranking.
+Semantic search.
+Filtering by course.
+Filtering by language.
+
+Do not introduce vector databases or AI-based semantic search without a demonstrated need and explicit approval.
+
+Search results must preserve transcript timestamps and their associated video identifiers.
+
+4.5 Video Architecture
+
+Separate video metadata, video source management, playback, and transcript indexing.
+
+The video player should not be responsible for database persistence or analytics business logic.
+
+Use dedicated server-side services for:
+
+Loading video metadata.
+Retrieving transcripts.
+Saving progress.
+Recording playback events.
+Calculating engagement metrics.
+
+The system should be extensible to support different video providers.
+
+Do not assume that video files must be stored directly in the application server or relational database.
+
+5. Security and Authorization
+
+Security must be considered in every feature.
+
+Mandatory requirements:
+
+Validate all external inputs.
+Enforce authorization on the server.
+Use parameterized database queries or safe ORM operations.
+Prevent SQL injection.
+Prevent cross-site scripting.
+Apply CSRF protection where applicable.
+Use secure cookies.
+Protect sensitive environment variables.
+Never commit credentials or secrets.
+Apply rate limiting to sensitive endpoints.
+Prevent users from manipulating their own authorization roles.
+Protect administrative endpoints.
+Avoid leaking sensitive information in errors or logs.
+
+Use established security libraries and framework capabilities.
+
+Follow the principle of least privilege.
+
+6. Privacy and Data Management
+
+The platform must collect only necessary user information.
+
+Requirements:
+
+Users can access their own learning progress.
+Users cannot access other users' private activity.
+Administrative analytics must be protected.
+Personal information must not be exposed in public search results.
+Avoid collecting unnecessary personal data.
+Provide a reasonable account and data deletion strategy.
+Document the purpose of analytics events.
+Define appropriate retention periods.
+
+The implementation should account for applicable privacy regulations, including GDPR where relevant.
+
+7. User Experience and Accessibility
+
+The interface should be straightforward, responsive, and accessible.
+
+Required pages or application areas:
+
+Home page.
+Course discovery page.
+Course detail page.
+Video learning page.
+Search results page.
+Authentication pages.
+User learning dashboard.
+Administrative analytics dashboard.
+UX requirements
+Clear navigation.
+Consistent visual language.
+Responsive layouts.
+Loading states.
+Empty states.
+Error states.
+Useful feedback after user actions.
+Clear distinction between public and authenticated functionality.
+Accessibility requirements
+Semantic HTML.
+Keyboard navigation.
+Visible focus indicators.
+Accessible form labels.
+Appropriate color contrast.
+Accessible video controls.
+Screen-reader-friendly search results.
+Avoid relying exclusively on color to communicate information.
+
+Do not sacrifice accessibility for visual complexity.
+
+8. Code Quality and Engineering Standards
+8.1 Type Safety
+
+Maintain end-to-end type safety.
+
+Requirements:
+
+Avoid any whenever possible.
+Prefer explicit types and interfaces.
+Validate external data at runtime.
+Keep database models and application types consistent.
+Avoid unsafe type assertions.
+Properly type API inputs and outputs.
+Handle nullable values explicitly.
+
+TypeScript types alone must not be treated as runtime validation.
+
+8.2 Code Organization
+
+Organize the application according to clear responsibilities.
+
+Separate:
+
+UI components.
+Business logic.
+Database access.
+Authentication.
+Authorization.
+Search services.
+Video services.
+Analytics services.
+Shared types and validation.
+
+Avoid unnecessary abstractions and excessively large components.
+
+8.3 Error Handling
+
+Errors must be handled explicitly.
+
+Requirements:
+
+Never silently swallow unexpected errors.
+Provide useful user-facing messages.
+Log sufficient diagnostic information.
+Never expose secrets or sensitive database information.
+Distinguish expected validation errors from unexpected system failures.
+8.4 Testing
+
+Implement tests appropriate to each feature.
+
+At minimum, maintain:
+
+Unit tests
+
+Search relevance and result formatting.
+Transcript timestamp handling.
+Progress calculations.
+Analytics calculations.
+Validation logic.
+
+Integration tests
+
+Authentication workflows.
+Database operations.
+Course enrollment.
+Video progress persistence.
+Transcript search.
+Administrative authorization.
+
+End-to-end tests
+
+User registration and login.
+Course discovery.
+Searching within a video.
+Jumping to a timestamp.
+Saving and restoring playback progress.
+Accessing the learning dashboard.
+Preventing unauthorized analytics access.
+
+Tests must be updated whenever relevant application behavior changes.
+
+Do not claim that tests pass unless they have actually been executed.
+
+9. AI Agent Development Workflow
+
+All AI agents must follow this workflow when working on the project.
+
+Step 1: Inspect
+
+Before making changes:
+
+Read this AGENTS.md file.
+Inspect the project structure.
+Review existing implementations.
+Read relevant documentation.
+Identify the affected components.
+Check the current Git status.
+Understand existing conventions.
+
+Never assume that a feature does not exist before inspecting the repository.
+
+Step 2: Plan
+
+Before implementing a non-trivial change:
+
+Explain the intended changes.
+Identify affected files and modules.
+Describe database or API changes.
+Identify potential regressions.
+Identify security implications.
+Define how the change will be tested.
+
+For significant architectural changes, present the proposal and wait for approval.
+
+Step 3: Implement
+
+During implementation:
+
+Keep changes focused.
+Follow existing conventions.
+Avoid unrelated refactoring.
+Avoid unnecessary dependencies.
+Preserve existing behavior unless explicitly instructed otherwise.
+Update relevant documentation.
+Add or update tests.
+Use migrations for database changes.
+
+Do not silently change public interfaces or established architectural decisions.
+
+Step 4: Validate
+
+Before requesting review:
+
+Run relevant tests.
+Run type checking.
+Run linting.
+Run formatting checks when available.
+Verify database migrations when applicable.
+Review the final diff.
+Check for accidental secrets or unrelated changes.
+
+If a check cannot be executed, clearly explain why.
+
+Never report successful validation without evidence.
+
+Step 5: Update the Changelog
+
+Every completed implementation task must include an update to CHANGELOG.md.
+
+The changelog must summarize:
+
+What changed.
+Why it changed.
+Important features added.
+Important bugs fixed.
+Relevant architectural changes.
+Database migrations or breaking changes, when applicable.
+
+Follow the existing changelog format.
+
+If no format exists, use a dated Keep a Changelog-style structure.
+
+Do not record planned or incomplete functionality as completed.
+
+Step 6: Request Review
+
+Always ask the user to review changes.
+
+Never assume that implementation approval also means approval of the resulting changes.
+
+Present:
+
+A concise summary of changes.
+Files and areas affected.
+Important technical decisions.
+Tests and validation performed.
+Known limitations.
+Any follow-up decisions required.
+
+Do not automatically commit, push, deploy, or merge changes unless explicitly requested.
+
+10. Mandatory Changelog Policy
+
+A CHANGELOG.md file must exist at the repository root.
+
+All implementation tasks must update this file.
+
+Recommended structure:
+
+Changelog
+[Unreleased]
+Added
+New functionality.
+Changed
+Changes to existing functionality.
+Fixed
+Bug fixes.
+Security
+Security-related changes.
+Technical
+Infrastructure, architecture, and database changes.
+
+Use dated releases when a version is released.
+
+Keep entries concise, meaningful, and understandable.
+
+Never replace the entire changelog when adding a new entry.
+
+11. Git and Change Management
+Inspect Git status before modifying files.
+Do not overwrite existing user changes.
+Do not revert unrelated modifications.
+Keep changes logically grouped.
+Avoid modifying generated files unless required.
+Never commit secrets, credentials, or local environment files.
+Never force-push.
+Never rewrite Git history without explicit authorization.
+Do not commit or push unless explicitly requested.
+
+Every task should produce a reviewable diff.
+
+12. Explicit Non-Goals
+
+Unless explicitly approved, do not implement:
+
+Payment processing.
+Subscription management.
+Paid courses.
+Premium user accounts.
+Advertising systems.
+Affiliate marketing.
+Social networking features.
+Public messaging or chat.
+Gamification systems.
+Unnecessary AI features.
+Unnecessary microservices.
+Complex distributed infrastructure.
+
+Keep the product focused on learning, video discovery, search, and progress tracking.
+
+13. Definition of Done
+
+A feature is considered complete only when:
+
+It satisfies the requested product requirements.
+It follows the established architecture.
+It uses properly validated and typed data.
+Database changes are migrated correctly.
+Authentication and authorization are enforced where applicable.
+Relevant tests have been implemented and executed.
+Type checking and linting have been performed where available.
+Errors and edge cases have been considered.
+Documentation has been updated where necessary.
+CHANGELOG.md has been updated.
+The final implementation has been presented to the user for review.
+
+A feature must not be described as complete if important requirements remain unimplemented.
+
+14. Final Instructions to AI Agents
+
+You are contributing to a long-term learning platform, not building a disposable prototype.
+
+Your priorities, in order, are:
+
+Preserve existing functionality.
+Follow this specification.
+Understand the existing architecture before changing it.
+Implement the smallest maintainable solution.
+Maintain security and data integrity.
+Keep the application strongly typed.
+Test your changes.
+Update CHANGELOG.md.
+Present your changes and explicitly request user review.
+
+When requirements are ambiguous, ask for clarification rather than making significant assumptions.
+
+When a requested change conflicts with this specification, explain the conflict and ask for direction.
+
+Do not silently ignore requirements.
+
+The user retains final authority over architectural decisions, significant dependencies, destructive operations, and feature scope.
